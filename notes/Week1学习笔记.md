@@ -1,5 +1,6 @@
-[TOC]
-
+- [学习笔记Week1](#学习笔记week1)
+  - [窗口通知](#窗口通知)
+    - [代码实现](#代码实现)
 
 
 ## 学习笔记Week1
@@ -22,19 +23,18 @@ String ChannelID = "1";
 String ChannelName = "channel";
 int importanceLevel = NotificationManager.IMPORTANCE_DEFAULT;	//通知优先级
 Notification notification;
-NotificationManager manager = 
-    (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+NotificationManager manager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
     
 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {	
     //Android版本大于等于8时必需要创建通知频道
-	NotificationChannel channel = new NotificationChannel(ChannelID, ChannelName, 		importanceLevel);
+    NotificationChannel channel = new NotificationChannel(ChannelID, ChannelName, importanceLevel);
     manager.createNotificationChannel(channel);
        //不同处，new Builder时需要传入ChannelID(同一个类别的通知在创建channel时传入的ID必须与Builder中的一致)
         notification = new NotificationCompat.Builder(this, ChannelID)
         .setContentTitle(title)
         .setContentText(text)
         .setSmallIcon(icon)
-		//.... 设置其他一些可选属性
+	//.... 设置其他一些可选属性
         .build();
 } else{
     //Android版本小于8时无需创建NotificationChannel
@@ -42,7 +42,7 @@ if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         .setContentTitle(title)
         .setContentText(text)
         .setSmallIcon(icon)
-		//.... 设置其他一些可选属性
+	//.... 设置其他一些可选属性
         .build();
 }
  //必备操作，与安卓系统版本无关，通过NotificationManager的notify唤醒通知
