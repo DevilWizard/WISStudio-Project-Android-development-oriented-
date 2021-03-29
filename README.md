@@ -1,4 +1,1 @@
-# WISStudio-Project(Android development-oriented)
-WISStudio 安卓方向考核项目
-
-* notes文件夹为学习进展情况展示 
+# 此Demo文件夹用于平常练习和开发，学习笔记以及最终考核在main分支中发布
