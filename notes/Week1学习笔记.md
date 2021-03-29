@@ -129,6 +129,8 @@ manager.notify(1, notification); //这里的1指通知的唯一id，相当于通
     创建Message对象后，指定消息内容（即what域），接着利用handler将消息发送出去。之后这条消息会被发送到MessageQueue中进行排队等待，当排到时，Looper会将这条消息发回handleMessage中，这样一来UI的更新操作就是在主线程中的handler中执行的，因此不会造成任何问题。而在这过程中Looper会一直查看MessageQueue中是否有新消息，是一个死循环，除非手动调用quit()方法会结束该循环，同时也会无法取出新消息。
 
     需要说明，当一个Activity启动时会自动创建Looper，因此主线程中的Looper启动与停止不需要我们担心。 但如果是自己定义的 Looper ，则要执行quit()操作，否则这个子线程就会一直处于等待状态，容易造成内存泄漏 。
+    
+    当然，如果只是想更新UI，可以直接调用封装好的runOnUiThread()，这样可以省去很多操作。
 
 
 
