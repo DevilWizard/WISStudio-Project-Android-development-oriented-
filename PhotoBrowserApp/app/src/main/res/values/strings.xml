@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">PhotoBrowserApp</string>
+    <string name="emptyText"></string>
+    <string name="requestButton">请求图片</string>
 </resources>
