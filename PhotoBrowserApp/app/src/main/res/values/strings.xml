@@ -2,4 +2,5 @@
     <string name="app_name">PhotoBrowserApp</string>
     <string name="emptyText"></string>
     <string name="requestButton">请求图片</string>
+    <string name="loadingText">加载更多内容中...</string>
 </resources>
