@@ -20,7 +20,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     public int page = 0;//图片url的页数，page不同请求回的图片也不同
     private static final String TAG = "MainActivity";
     private static final String PHOTO_JSON_HEAD = "https://picsum.photos/v2/list?page=";
-    private static final String PHOTO_JSON_REAR = "&limit=8";
+    private static final String PHOTO_JSON_REAR = "&limit=8";//默认一次initImageList请求加载8张图片
     private List<MyImage> myImageList = new ArrayList<>();
     private RecyclerView recyclerView;
     private TextView firstTimeLoadingTips;
@@ -31,34 +31,50 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initRecyclerView(recyclerView);//初始化recyclerview
         initImageList(getDifferentJson());//异步请求图片
         firstTimeLoadingTips = (TextView) findViewById(R.id.firstTimeLoadingTips);
         loadingBar = (ProgressBar) findViewById(R.id.loadingBar);
+
+    }
+
+    /**
+     * 初始化主页面的recyclerView，并完成相关操作
+     *
+     * @param recyclerView
+     *
+     */
+    private void initRecyclerView(RecyclerView recyclerView) {
         recyclerView = (RecyclerView) findViewById(R.id.image_recyclerview);
+        StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
+                StaggeredGridLayoutManager.VERTICAL);
+        recyclerView.setLayoutManager(staggeredGridLayoutManager);
+        myAdapter = new MyAdapter(myImageList);
+        recyclerView.setAdapter(myAdapter);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
 
             private boolean isSlidingUpward = false;
             private int[] lastPositions = null;
             private int lastCompletelyVisibleItemPosition = 0;
+            private StaggeredGridLayoutManager manager;
 
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
-                StaggeredGridLayoutManager manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
+                manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
 
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     int visibleItemCount = manager.getChildCount();
-                    Log.d(TAG, "onScrollStateChanged: visibleItemCount" + visibleItemCount);
                     int totalItemCount = manager.getItemCount();
+                    manager.findLastCompletelyVisibleItemPositions(lastPositions);
+                    lastCompletelyVisibleItemPosition = findMax(lastPositions) + 1;   //需要+1，因为position是从0开始算起的
+                    Log.d(TAG, "onScrollStateChanged: visibleItemCount" + visibleItemCount);
                     Log.d(TAG, "onScrollStateChanged: totalItemCount" + totalItemCount);
                     Log.d(TAG, "onScrollStateChanged: lastVisibleItemPosition" + lastCompletelyVisibleItemPosition);
                     if (isSlidingUpward && visibleItemCount > 0 && lastCompletelyVisibleItemPosition >= (totalItemCount-1)) {
                         myAdapter.setLoadState(MyAdapter.LOADING);
-                        Log.d(TAG, "onScrollStateChanged: 滑动到底了" );
                         loadMoreImg();
-
                     }
-
                 }
             }
 
@@ -72,19 +88,14 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                 } else {
                     isSlidingUpward = false;
                 }
-                StaggeredGridLayoutManager manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
-
+                manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
                 if (lastPositions == null) {
                     lastPositions = new int[manager.getSpanCount()];
                 }
-                for (int position : lastPositions) {
-                    Log.d(TAG, "onScrolled: " + position);
-                }
-                manager.findLastCompletelyVisibleItemPositions(lastPositions);
-                lastCompletelyVisibleItemPosition = findMax(lastPositions) + 1;   //需要+1，因为position是从0开始算起的
 
             }
 
+            //找到屏幕最底最右的视图位置
             private int findMax(int[] lastPositions) {
                 int max = lastPositions[0];
                 for (int value : lastPositions) {
@@ -95,20 +106,12 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                 return max;
             }
 
+            //当上拉到底时开始加载更多图片进页面
             private void loadMoreImg(){
+                //性能较差需要优化
                 initImageList(getDifferentJson());
-
             }
-
         });
-        StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
-                StaggeredGridLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(staggeredGridLayoutManager);
-        myAdapter = new MyAdapter(myImageList);
-        recyclerView.setAdapter(myAdapter);
-
-
-
     }
 
     /**
@@ -116,7 +119,6 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
      *
      * @return java.lang.String
      *
-     * @exception
      */
     private String getDifferentJson(){
         String jsonUrl = PHOTO_JSON_HEAD + page + PHOTO_JSON_REAR;
@@ -125,11 +127,10 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     }
 
     /**
-     * 在页面开始渲染时开启子线程异步请求图片json来往RecyclerView中添加图片资源
+     * 开启子线程异步请求图片json来往RecyclerView中加载图片资源
      *
      * @return void
      *
-     * @exception
      */
     private void initImageList(String imgJsonUrl) {
         HttpRequest.getJson(imgJsonUrl, this);

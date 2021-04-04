@@ -13,11 +13,18 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import java.util.List;
 
+/**
+ * 主页面中RecyclerView的适配器类，包含了显示图片的类{@see #ImageViewHolder}等
+ *
+ * @author WizardK
+ * @version 1.0
+ * @date 2021-03-31
+ */
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public static final int TYPE_IMAGE = 0;
     public static final int TYPE_FOOTER = 1;
-    public static final int LOADING = 1;
+    public static final int LOADING = 1;//加载的状态
     public static final int LOAD_FINISHED = 2;
     private int loadState = 2;//默认已加载完毕
     private List<MyImage> imageList;
@@ -26,6 +33,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public MyAdapter(List<MyImage> imageList) {
         this.imageList = imageList;
     }
+
 
     public static class ImageViewHolder extends RecyclerView.ViewHolder {
 
@@ -37,6 +45,9 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    /**
+     * 显示加载更多的ViewHolder类
+     */
     public static class FooterViewHolder extends RecyclerView.ViewHolder {
 
         private TextView loadingText;
@@ -47,6 +58,12 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
+    /**
+     * 将显示“加载更多”的视图设置为{@link #loadState}的状态
+     *
+     * @param loadState
+     *
+     */
     public void setLoadState(int loadState) {
         this.loadState = loadState;
         notifyDataSetChanged();
@@ -102,6 +119,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return imageList.size() + 1;
     }
 
+    //将“加载更多”视图的宽度设为整个屏幕的宽度
     @Override
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewAttachedToWindow(holder);
