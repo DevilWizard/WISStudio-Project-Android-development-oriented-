@@ -108,7 +108,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
         } else {
             MyImage image = imageList.get(position);
-            Log.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
+            //Log.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
             ((ImageViewHolder) holder).imageView.setImageBitmap(image.getImageBitmap());
         }
     }
@@ -119,7 +119,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return imageList.size() + 1;
     }
 
-    //将“加载更多”视图的宽度设为整个屏幕的宽度
+
     @Override
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {
         super.onViewAttachedToWindow(holder);
@@ -128,7 +128,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             StaggeredGridLayoutManager.LayoutParams params = (StaggeredGridLayoutManager.LayoutParams) layoutParams;
             int position = holder.getLayoutPosition();
             if (getItemViewType(position) == TYPE_FOOTER) {
-                params.setFullSpan(true);
+                params.setFullSpan(true);//将“加载更多”视图的宽度设为整个屏幕的宽度
             }
         }
     }

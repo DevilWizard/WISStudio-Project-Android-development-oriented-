@@ -94,13 +94,18 @@ RecyclerView是app中非常常用而且强大的一个组件，用它可以写�
         public ViewHolder onCreateViewHolder
             (@NonNull ViewGroup parent, int viewType) {
             //直接通过inflate方法将layout构造成在RecyclerView中显示的子view对象
-            View view = LayoutInflater.from(parent.getContext()).
-                inflate(R.layout.subView, parent, false);
-            return new ViewHolder(view);
+            //可以通过viewType参数来显示不同的布局
+            switch(viewType){
+                case TYPE_X:
+             		View viewX = LayoutInflater.from(parent.getContext()).
+        						inflate(R.layout.subview_x, parent, false);
+           			return new ViewHolder(viewX);               
+            }
+    
         }
     
         /*
-        	此方法会在滚动时被调用，以实现边滚动边更新内容
+        	当RecyclerView需要显示或更新其内容时调用
        		holder：待更新的ViewHolder对象
        		position：该ViewHolder对象在Adapter内的位置
         */
@@ -118,8 +123,24 @@ RecyclerView是app中非常常用而且强大的一个组件，用它可以写�
             return itemList.size();
         }
         
+       //返回Adapter中的子布局类型 
+       @Override
+        public int getItemViewType(int position) {
+            //通过判断position的大小来告诉RecyclerView此位置下的子布局类型应为什么
+            //返回的int值就是onCreateViewHolder方法中的viewType参数值
+            if (/* condition1 */) {
+                return TYPE_A;	
+            } else if (/* condition2 */) {
+                return TYPE_B;
+            } else {
+                return TYPE_X;
+            }
+        }
         
         
+        
+    ```
+
 }
     ```
     

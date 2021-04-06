@@ -7,6 +7,7 @@
         android:id="@+id/loadTips"
         android:layout_width="match_parent"
         android:layout_height="40dp"
+        android:visibility="invisible"
         android:gravity="center"
         android:text="@string/loadingText"
         android:textSize="18sp" />

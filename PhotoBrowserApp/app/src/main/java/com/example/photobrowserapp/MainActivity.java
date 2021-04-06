@@ -58,11 +58,13 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
             private int lastCompletelyVisibleItemPosition = 0;
             private StaggeredGridLayoutManager manager;
 
+            //当滑到底部时，开始加载下一页图片
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
 
+                //滑到底部时显示“加载更多”视图同时加载图片
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
                     int visibleItemCount = manager.getChildCount();
                     int totalItemCount = manager.getItemCount();
@@ -73,11 +75,14 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                     Log.d(TAG, "onScrollStateChanged: lastVisibleItemPosition" + lastCompletelyVisibleItemPosition);
                     if (isSlidingUpward && visibleItemCount > 0 && lastCompletelyVisibleItemPosition >= (totalItemCount-1)) {
                         myAdapter.setLoadState(MyAdapter.LOADING);
+                        //自动滚动到加载更多的视图位置，该操作目前有bug待解决
+                        //recyclerView.smoothScrollToPosition(lastCompletelyVisibleItemPosition + 1);
                         loadMoreImg();
                     }
                 }
             }
 
+            //用于判断recyclerView是否在向上滑动，同时不断获取屏幕最底部的视图位置数组lastPositions
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
