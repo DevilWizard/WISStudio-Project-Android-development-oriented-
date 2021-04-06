@@ -118,9 +118,11 @@ RecyclerView是app中非常常用而且强大的一个组件，用它可以写�
             return itemList.size();
         }
         
-    }
+        
+        
+}
     ```
-
+    
     
 
 #### 	2.子布局的编写
@@ -135,7 +137,7 @@ RecyclerView是app中非常常用而且强大的一个组件，用它可以写�
 List<Item> itemList = new ArrayList<>();  //实例化Item数组列表对象
 RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
 LayoutManager layoutManager = new LayoutManager(this);
-recyclerView.setLayoutManager(layoutManager); //必备操作，为RecyclerView设定布局方式，按需传入不同的LayoutManager子对象
+recyclerView.setLayoutManager(layoutManager); //必备操作，为RecyclerView设定布局方式，按需传入具体的LayoutManager子对象
 ItemAdapter itemAdapter = new ItemAdapter(itemList);
 recyclerView.setAdapter(itemAdapter);  //必备操作，为RecyclerView设置数组适配器
 ```
