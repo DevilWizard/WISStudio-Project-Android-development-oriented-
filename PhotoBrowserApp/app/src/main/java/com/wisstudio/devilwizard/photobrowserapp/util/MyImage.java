@@ -1,4 +1,4 @@
-package com.example.photobrowserapp;
+package com.wisstudio.devilwizard.photobrowserapp.util;
 
 import android.graphics.Bitmap;
 
@@ -17,12 +17,12 @@ public class MyImage {
     private String id;
     private String author;
     private String download_url;
-    private Bitmap imageBitmap;
+    private Bitmap bitmap;
 
     public MyImage(String author, String download_url) {
         this.author = author;
         this.download_url = download_url;
-        this.imageBitmap = null;
+        this.bitmap = null;
     }
 
     public String getAuthor() {
@@ -34,11 +34,11 @@ public class MyImage {
     }
 
     public Bitmap getImageBitmap() {
-        return imageBitmap;
+        return bitmap;
     }
 
-    public void setImageBitmap(Bitmap imageBitmap) {
-        this.imageBitmap = imageBitmap;
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
     }
 
     @NonNull

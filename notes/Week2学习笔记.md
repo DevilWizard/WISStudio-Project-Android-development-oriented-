@@ -142,9 +142,10 @@ RecyclerView是app中非常常用而且强大的一个组件，用它可以写�
     ```
 
 }
-    ```
-    
-    
+
+##### RecyclerView.Adapter的一些重要方法
+
+​	notifyDataSetChanged
 
 #### 	2.子布局的编写
 

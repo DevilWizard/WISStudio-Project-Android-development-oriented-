@@ -1,20 +1,28 @@
-package com.example.photobrowserapp;
+package com.wisstudio.devilwizard.photobrowserapp;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+
+import com.wisstudio.devilwizard.photobrowserapp.util.HttpCallBackListener;
+import com.wisstudio.devilwizard.photobrowserapp.util.HttpRequest;
+import com.wisstudio.devilwizard.photobrowserapp.util.ImageLoader;
+import com.wisstudio.devilwizard.photobrowserapp.util.MyAdapter;
+import com.wisstudio.devilwizard.photobrowserapp.util.MyImage;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class MainActivity extends AppCompatActivity implements HttpCallBackListener<List<MyImage>>{
+public class MainActivity extends AppCompatActivity implements HttpCallBackListener<List<MyImage>> {
 
 
     public int page = 0;//图片url的页数，page不同请求回的图片也不同
@@ -49,7 +57,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                 StaggeredGridLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(staggeredGridLayoutManager);
-        myAdapter = new MyAdapter(myImageList);
+        myAdapter = new MyAdapter(this, myImageList);
         recyclerView.setAdapter(myAdapter);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
 
@@ -138,7 +146,12 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
      *
      */
     private void initImageList(String imgJsonUrl) {
-        HttpRequest.getJson(imgJsonUrl, this);
+        if (!ImageLoader.isNetworkConnected(this)) {    //无网络时直接读取缓存
+
+        } else {
+            HttpRequest.getJson(imgJsonUrl, this);
+        }
+
     }
 
     /**
@@ -153,31 +166,42 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     @Override
     public void onFinish(List<MyImage> response) {
         HttpRequest httpRequest = new HttpRequest();
+        for (MyImage myImage : response) {
+            myImageList.add(myImage);
 
-        try {
-            httpRequest.setBitmap(response, new HttpCallBackListener<MyImage>() {
-                @Override
-                public void onFinish(MyImage response) {
-                    runOnUiThread(() -> {
-                        myImageList.add(response);
-                        loadingBar.setVisibility(View.GONE);
-                        firstTimeLoadingTips.setVisibility(View.GONE);
-                        myAdapter.setLoadState(MyAdapter.LOAD_FINISHED);
-                        //myAdapter.notifyItemInserted(myImageList.size() - 1);
-                        myAdapter.notifyDataSetChanged();
-                    });
-                }
-                @Override
-                public void onError(Exception e) {
-                    e.printStackTrace();
-                }
-            });
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
-    }
+        runOnUiThread(() -> {
+            loadingBar.setVisibility(View.GONE);
+            firstTimeLoadingTips.setVisibility(View.GONE);
+            myAdapter.setLoadState(MyAdapter.LOAD_FINISHED);
+            myAdapter.notifyItemInserted(myImageList.size() - 1);
+        });
+
+        Log.d(TAG, "onFinish: myImageList size" + myImageList.size());
+
+//        try {
+//            httpRequest.setBitmap(response, new HttpCallBackListener<MyImage>() {
+//                @Override
+//                public void onFinish(MyImage response) {
+//                    runOnUiThread(() -> {
+//                        myImageList.add(response);
+//                        loadingBar.setVisibility(View.GONE);
+//                        firstTimeLoadingTips.setVisibility(View.GONE);
+//                        myAdapter.setLoadState(MyAdapter.LOAD_FINISHED);
+//                        myAdapter.notifyItemInserted(myImageList.size() - 1);
+//                    });
+//                }
+//                @Override
+//                public void onError(Exception e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (ExecutionException e) {
+//            e.printStackTrace();
+//        }
+   }
 
     @Override
     public void onError(Exception e) {

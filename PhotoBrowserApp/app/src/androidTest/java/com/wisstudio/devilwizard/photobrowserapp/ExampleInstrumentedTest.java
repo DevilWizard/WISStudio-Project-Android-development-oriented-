@@ -1,4 +1,4 @@
-package com.example.photobrowserapp;
+package com.wisstudio.devilwizard.photobrowserapp;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.example.photobrowserapp", appContext.getPackageName());
+        assertEquals("com.wisstudio.devilwizard.photobrowserapp", appContext.getPackageName());
     }
 }

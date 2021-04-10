@@ -1,4 +1,4 @@
-package com.example.photobrowserapp;
+package com.wisstudio.devilwizard.photobrowserapp;
 
 import org.junit.Test;
 

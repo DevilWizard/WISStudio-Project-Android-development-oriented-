@@ -1,5 +1,6 @@
-package com.example.photobrowserapp;
+package com.wisstudio.devilwizard.photobrowserapp.util;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,9 +9,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import com.wisstudio.devilwizard.photobrowserapp.R;
+
+import java.io.File;
 import java.util.List;
 
 /**
@@ -26,12 +32,21 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public static final int TYPE_FOOTER = 1;
     public static final int LOADING = 1;//加载的状态
     public static final int LOAD_FINISHED = 2;
+    private static final String TAG = "MyAdapter";
     private int loadState = 2;//默认已加载完毕
     private List<MyImage> imageList;
-    private static final String TAG = "MyAdapter";
+    private AppCompatActivity contextActivity;
+    private ImageLoader imageLoader;
 
-    public MyAdapter(List<MyImage> imageList) {
+
+    public MyAdapter(AppCompatActivity contextActivity, List<MyImage> imageList) {
+        this.contextActivity = contextActivity;
         this.imageList = imageList;
+        MemoryCache memoryCache = new MemoryCache();
+        File sdCard = android.os.Environment.getExternalStorageDirectory();//获得SD卡
+        File cacheDir = new File(sdCard, "jereh_cache" );//缓存根目录
+        FileCache fcache = new FileCache(contextActivity);//文件缓存
+        imageLoader = new ImageLoader(contextActivity, memoryCache, fcache);
     }
 
 
@@ -95,6 +110,8 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return null;
     }
 
+
+
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof FooterViewHolder) {
@@ -108,8 +125,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
         } else {
             MyImage image = imageList.get(position);
-            //Log.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
-            ((ImageViewHolder) holder).imageView.setImageBitmap(image.getImageBitmap());
+            Log.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
+            ImageView imageView = ((ImageViewHolder)holder).imageView;
+            //Bitmap bitmap = imageLoader.loadBitmap(imageView, image.getUrl());
+            Bitmap bitmap = imageLoader.loadBitmap(imageView, image.getUrl());
+            image.setBitmap(bitmap);
+            //imageView.setImageBitmap(bitmap);
+            //((ImageViewHolder) holder).imageView.setImageBitmap(image.getImageBitmap());
         }
     }
 
