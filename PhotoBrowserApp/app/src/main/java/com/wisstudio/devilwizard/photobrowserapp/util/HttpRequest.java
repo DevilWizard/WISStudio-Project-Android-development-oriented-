@@ -8,7 +8,6 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,43 +46,44 @@ public class HttpRequest {
      *
      * @exception
      */
-//    public static Bitmap photo2Bitmap(String photoUrl) throws ExecutionException, InterruptedException {
-//
-//                HttpURLConnection conn = null;
-//                BufferedReader reader = null;
-//                try {
-//                    URL url = new URL(photoUrl);
-//                    conn = (HttpURLConnection) url.openConnection();
-//                    conn.setRequestMethod("GET");
-//                    conn.setConnectTimeout(3000);
-//                    conn.setReadTimeout(3000);
-//                    InputStream in = conn.getInputStream();
-//
-//                    BitmapFactory.Options options = new BitmapFactory.Options();
-//                    options.inSampleSize = 4;
-//                    Bitmap bitmap = BitmapFactory.decodeStream(in, null, options);
-//                    Log.d(TAG, "photo2Bitmap: " + Thread.currentThread().getId());
-//                    Log.d(TAG, "photo2Bitmap: " + bitmap);
-//                    return HttpRequest.compressImage(bitmap);
-//
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                } finally {
-//                    if (reader != null) {
-//                        try {
-//                            reader.close();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                    if (conn != null) {
-//                        conn.disconnect();
-//                    }
-//                }
-//                return null;
-//
-//
-//    }
+    @Deprecated
+    public static Bitmap photo2Bitmap(String photoUrl) throws ExecutionException, InterruptedException {
+
+                HttpURLConnection conn = null;
+                BufferedReader reader = null;
+                try {
+                    URL url = new URL(photoUrl);
+                    conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    conn.setConnectTimeout(3000);
+                    conn.setReadTimeout(3000);
+                    InputStream in = conn.getInputStream();
+
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inSampleSize = 4;
+                    Bitmap bitmap = BitmapFactory.decodeStream(in, null, options);
+                    Log.d(TAG, "photo2Bitmap: " + Thread.currentThread().getId());
+                    Log.d(TAG, "photo2Bitmap: " + bitmap);
+                    return bitmap;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    if (reader != null) {
+                        try {
+                            reader.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    if (conn != null) {
+                        conn.disconnect();
+                    }
+                }
+                return null;
+
+
+    }
 
     /**
      * 从网络获取图片，并缓存在指定的文件中
@@ -92,12 +92,11 @@ public class HttpRequest {
      *
      * @param file 缓存文件
      *
-     * @return
+     * @return 返回缓存后的Bitmap对象
      */
     public static Bitmap loadBitmapFromWeb(String url, File file) {
         HttpURLConnection conn = null;
         InputStream is = null;
-        OutputStream os = null;
         try {
             Bitmap bitmap = null;
             URL imageUrl = new URL(url);
@@ -106,15 +105,13 @@ public class HttpRequest {
             conn.setReadTimeout(4000);
             is = conn.getInputStream();
             bitmap = cacheToLocal(is, file);//将图片缓存至本地
+            Log.d(TAG, "loadBitmapFromWeb: " + bitmap);
             return bitmap;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
         } finally {
             try {
-                if(os != null) {
-                    os.close();
-                }
                 if(is != null) {
                     is.close();
                 }
@@ -143,10 +140,20 @@ public class HttpRequest {
         options.inSampleSize = 4;
         Bitmap bitmap = BitmapFactory.decodeStream(is, null, options);//减少采样率，相当于是内存占用压缩
         byte[] bitmapBytes = qualityCompress(bitmap);//质量压缩后缓存在本地
+        FileOutputStream os = null;
         try {
-            byteToFile(bitmapBytes, new FileOutputStream(file));
+            os = new FileOutputStream(file);
+            byteToFile(bitmapBytes, os);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (os !=null) {
+                    os.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return bitmap;
     }
@@ -173,46 +180,20 @@ public class HttpRequest {
     /**
      * 从文件中读取bitmap并返回
      *
-     * @param f 待读取的File对象
+     * @param file 待读取的File对象
      *
      * @return android.graphics.Bitmap
      *
      * @exception
      */
-    public static Bitmap decodeFile(File f) {
+    public static Bitmap decodeFile(File file) {
         try {
-            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, null);
+            Bitmap bitmap = BitmapFactory.decodeStream(new FileInputStream(file), null, null);
             return bitmap;
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-
-    /**
-     * 将图片转为二进制缓存
-     *
-     * @param is
-     *
-     * @param os
-     *
-     * @return void
-     *
-     * @exception
-     */
-    @Deprecated
-    private void copyStream(InputStream is, OutputStream os) {
-        final int buffer_size = 1024;
-        try {
-            byte[] bytes = new byte[buffer_size];
-            int len = 0;
-            while ((len = is.read(bytes))!= -1) {
-                os.write(bytes, 0, len);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 

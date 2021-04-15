@@ -1,8 +1,8 @@
 package com.wisstudio.devilwizard.photobrowserapp.util;
 
 import android.content.Context;
-import android.os.Build;
-import android.os.Environment;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import java.io.File;
@@ -10,7 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
 /**
- * FileCache类用于文件缓存
+ * FileCache类用于将图片缓存至本地
  *
  * @author WizardK
  * @date 2021-04-06
@@ -59,11 +59,26 @@ public class FileCache {
         try{
             String fileName = URLEncoder.encode(path, "utf-8");
             f = new File(mCacheDir, fileName);
+            Log.d(TAG, "getFile: " + f.exists());
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
         return f;
+    }
+
+    public Bitmap getBitmapFromFile(String cachePath) {
+        return BitmapFactory.decodeFile(cachePath);
+    }
+
+    /**
+     * 返回图片储存的完整绝对路径
+     *
+     * @param url 图片的url
+     * @return 返回图片储存的完整绝对路径
+     */
+    public String getFullCachePath(String url) {
+        return mCacheDir.getAbsolutePath() + "//" + ImageLoader.url2path(url);
     }
 
     /**

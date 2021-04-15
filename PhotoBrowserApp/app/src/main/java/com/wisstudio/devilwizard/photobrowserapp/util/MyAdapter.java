@@ -9,14 +9,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
+import com.wisstudio.devilwizard.photobrowserapp.MainActivity;
 import com.wisstudio.devilwizard.photobrowserapp.R;
 
-import java.io.File;
 import java.util.List;
 
 /**
@@ -35,18 +33,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = "MyAdapter";
     private int loadState = 2;//默认已加载完毕
     private List<MyImage> imageList;
-    private AppCompatActivity contextActivity;
     private ImageLoader imageLoader;
+    private PhotoDataBaseManager photoDataBaseManager;
 
-
-    public MyAdapter(AppCompatActivity contextActivity, List<MyImage> imageList) {
-        this.contextActivity = contextActivity;
+    public MyAdapter(List<MyImage> imageList) {
         this.imageList = imageList;
-        MemoryCache memoryCache = new MemoryCache();
-        File sdCard = android.os.Environment.getExternalStorageDirectory();//获得SD卡
-        File cacheDir = new File(sdCard, "jereh_cache" );//缓存根目录
-        FileCache fcache = new FileCache(contextActivity);//文件缓存
-        imageLoader = new ImageLoader(contextActivity, memoryCache, fcache);
+        imageLoader = ImageLoader.getInstance();
+        photoDataBaseManager = MainActivity.photoDBManager;
     }
 
 
@@ -127,11 +120,17 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             MyImage image = imageList.get(position);
             Log.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
             ImageView imageView = ((ImageViewHolder)holder).imageView;
-            //Bitmap bitmap = imageLoader.loadBitmap(imageView, image.getUrl());
-            Bitmap bitmap = imageLoader.loadBitmap(imageView, image.getUrl());
-            image.setBitmap(bitmap);
-            //imageView.setImageBitmap(bitmap);
-            //((ImageViewHolder) holder).imageView.setImageBitmap(image.getImageBitmap());
+            //未加载的图片默认用纯灰图片填充
+            imageView.setImageResource(R.drawable.default_loading_picture);
+            String imageUrl = image.getUrl();
+            if (ImageLoader.isNetworkConnected(imageLoader.getContext())) {
+                Bitmap bitmap = imageLoader.loadBitmap(imageView, imageUrl);
+                if (bitmap != null) {
+                    photoDataBaseManager.addOnePhoto(image.getAuthor(), imageUrl, imageLoader.fileCache.getFullCachePath(imageUrl));
+                }
+            } else {
+                imageLoader.loadPhotoFromFileCache(imageUrl, imageView, photoDataBaseManager);
+            }
         }
     }
 
