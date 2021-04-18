@@ -1,10 +1,12 @@
-package com.wisstudio.devilwizard.photobrowserapp.util;
+package com.wisstudio.devilwizard.photobrowserapp.db;
 
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+
+import com.wisstudio.devilwizard.photobrowserapp.util.MyImage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,8 @@ public class PhotoDataBaseManager {
     private static final String TAG = "DataBaseManager";
     private static final String AUTHOR_COLUMN = "author";
     private static final String URL_COLUMN = "url";
+    private static final String WIDTH_COLUMN = "width";
+    private static final String HEIGHT_COLUMN = "height";
     private static final String CACHEPATH_COLUMN = "cachePath";
     private SQLiteDatabase db;
     private String tableName;
@@ -34,15 +38,19 @@ public class PhotoDataBaseManager {
      *
      * @param author 图片的创作者
      * @param url 图片下载的源网址
+     * @param width 图片的宽
+     * @param height 图片的高
      * @param cachePath 图片在本地缓存的路径
      *
      */
-    public void addOnePhoto(String author, String url, String cachePath) {
+    public void addOnePhoto(String author, String url, int width, int height, String cachePath) {
 
         if (!isPhotoExists(url)) {
             ContentValues values = new ContentValues();
             values.put(AUTHOR_COLUMN, author);
             values.put(URL_COLUMN, url);
+            values.put(WIDTH_COLUMN, width);
+            values.put(HEIGHT_COLUMN, height);
             values.put(CACHEPATH_COLUMN, cachePath);
             db.insert(tableName, null, values);
             values.clear();
@@ -111,13 +119,19 @@ public class PhotoDataBaseManager {
         Cursor cursor = db.query(tableName, null, null, null, null, null, null);
         int authorColumn = cursor.getColumnIndex(AUTHOR_COLUMN);
         int urlColumn = cursor.getColumnIndex(URL_COLUMN);
+        int widthColumn = cursor.getColumnIndex(WIDTH_COLUMN);
+        int heightColumn = cursor.getColumnIndex(HEIGHT_COLUMN);
         String author = null;
         String url = null;
+        int width = 0;
+        int height = 0;
         if (cursor.moveToFirst()) {
             do {
                 author = cursor.getString(authorColumn);
                 url = cursor.getString(urlColumn);
-                MyImage myImage = new MyImage(author, url);
+                width = cursor.getInt(widthColumn);
+                height = cursor.getInt(heightColumn);
+                MyImage myImage = new MyImage(author, width, height, url);
                 cachedImages.add(myImage);
             } while (cursor.moveToNext());
         }

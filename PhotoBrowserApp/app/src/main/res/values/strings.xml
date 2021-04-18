@@ -3,4 +3,5 @@
     <string name="emptyText"></string>
     <string name="requestButton">请求图片</string>
     <string name="loadingText">加载更多内容中...</string>
+    <string name="downloadText">下载原图</string>
 </resources>

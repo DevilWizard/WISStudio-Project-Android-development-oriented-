@@ -1,8 +1,10 @@
 package com.wisstudio.devilwizard.photobrowserapp.util;
 
 import android.graphics.Bitmap;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -14,7 +16,9 @@ import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import com.wisstudio.devilwizard.photobrowserapp.MainActivity;
 import com.wisstudio.devilwizard.photobrowserapp.R;
+import com.wisstudio.devilwizard.photobrowserapp.db.PhotoDataBaseManager;
 
+import java.io.FileNotFoundException;
 import java.util.List;
 
 /**
@@ -26,15 +30,29 @@ import java.util.List;
  */
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    /**
+     * 表示该View是图片类型
+     */
     public static final int TYPE_IMAGE = 0;
+    /**
+     * 表示该View是加载更多的视图类型
+     */
     public static final int TYPE_FOOTER = 1;
+    /**
+     * 表示下一页图片正在加载中
+     */
     public static final int LOADING = 1;//加载的状态
+    /**
+     * 表示图片已经加载完毕
+     */
     public static final int LOAD_FINISHED = 2;
     private static final String TAG = "MyAdapter";
     private int loadState = 2;//默认已加载完毕
     private List<MyImage> imageList;
     private ImageLoader imageLoader;
     private PhotoDataBaseManager photoDataBaseManager;
+    private int downX, downY;
+
 
     public MyAdapter(List<MyImage> imageList) {
         this.imageList = imageList;
@@ -74,7 +92,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
      */
     public void setLoadState(int loadState) {
         this.loadState = loadState;
-        notifyDataSetChanged();
+        //notifyDataSetChanged();
     }
 
     @Override
@@ -123,10 +141,49 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             //未加载的图片默认用纯灰图片填充
             imageView.setImageResource(R.drawable.default_loading_picture);
             String imageUrl = image.getUrl();
-            if (ImageLoader.isNetworkConnected(imageLoader.getContext())) {
-                Bitmap bitmap = imageLoader.loadBitmap(imageView, imageUrl);
+            imageView.setTag(imageUrl);
+            imageView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            downX = (int)event.getX();
+                            downY = (int)event.getY();
+                            break;
+                    }
+                    return false;
+                }
+
+            });
+            imageView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    Log.d(TAG, "onLongClick: " + "downX: " + downX + "downY: " + downY);
+                    Vibrator vibrator = (Vibrator)(MyApplication.getContext().getSystemService(MyApplication.getContext().VIBRATOR_SERVICE));
+                    vibrator.vibrate(Vibrator.VIBRATION_EFFECT_SUPPORT_YES);//调用系统硬件级别的震动
+                    LongPressPopUpWindow popUpWindow = new LongPressPopUpWindow(MainActivity.getMainActivity(), LongPressPopUpWindow.IMAGEVIEW_POPUP_WINDOW);
+                    //popUpWindow.showAtLocation();
+                    popUpWindow.showAsDropDown(v, 0, 0);
+                    (popUpWindow.getPopUpView()).findViewById(R.id.click_to_download).setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            try {
+                                MainActivity.getMainActivity().getImageDownLoader().saveImageToGallery(imageUrl);
+                                popUpWindow.dismiss();
+                            } catch (FileNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                    return false;
+                }
+
+            });
+            if (ImageLoader.isNetworkConnected(MyApplication.getContext()) && imageUrl != null) {//区分有网和无网的情况
+                Bitmap bitmap = imageLoader.loadBitmap(imageView, image);
                 if (bitmap != null) {
-                    photoDataBaseManager.addOnePhoto(image.getAuthor(), imageUrl, imageLoader.fileCache.getFullCachePath(imageUrl));
+                    photoDataBaseManager.addOnePhoto(image.getAuthor(), imageUrl, image.getWidth(), image.getHeight(),
+                            imageLoader.fileCache.getFullCachePath(imageUrl));
                 }
             } else {
                 imageLoader.loadPhotoFromFileCache(imageUrl, imageView, photoDataBaseManager);

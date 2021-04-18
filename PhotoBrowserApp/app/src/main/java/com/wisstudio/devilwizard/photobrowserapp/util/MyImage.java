@@ -12,11 +12,27 @@ import androidx.annotation.NonNull;
  */
 public class MyImage {
 
+    /**
+     * 图片的作者
+     */
     private String author;
+    /**
+     * 图片的宽(以pixel为单位)
+     */
+    private int width;
+    /**
+     * 图片的高(以pixel为单位)
+     */
+    private int height;
+    /**
+     * 图片的源网址
+     */
     private String download_url;
 
-    public MyImage(String author, String download_url) {
+    public MyImage(String author, int width, int height, String download_url) {
         this.author = author;
+        this.width = width;
+        this.height = height;
         this.download_url = download_url;
     }
 
@@ -28,6 +44,13 @@ public class MyImage {
         return download_url;
     }
 
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
 
     @NonNull
     @Override

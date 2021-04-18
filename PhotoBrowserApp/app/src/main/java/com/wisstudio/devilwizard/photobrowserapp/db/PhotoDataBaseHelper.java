@@ -1,4 +1,4 @@
-package com.wisstudio.devilwizard.photobrowserapp.util;
+package com.wisstudio.devilwizard.photobrowserapp.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -18,11 +18,15 @@ public class PhotoDataBaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_NAME = "Photo";
     /**
      * 创建名为Photo的表
+     * 该表包含如下列：
+     * id(自增键) | author | url | width | height | cachePath
      */
     public static final String CREATE_TABLE_PHOTO = "CREATE TABLE "+ TABLE_NAME +"("
             + "id integer primary key autoincrement, "
             + "author text, "
             + "url text, "
+            + "width integer, "
+            + "height integer, "
             + "cachePath text)";
 
     private Context mContext;

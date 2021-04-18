@@ -2,10 +2,16 @@ package com.wisstudio.devilwizard.photobrowserapp.util;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 import android.widget.ImageView;
+
+import com.wisstudio.devilwizard.photobrowserapp.cache.disk.FileCache;
+import com.wisstudio.devilwizard.photobrowserapp.cache.memory.MemoryCache;
+import com.wisstudio.devilwizard.photobrowserapp.db.PhotoDataBaseManager;
+import com.wisstudio.devilwizard.photobrowserapp.util.NetWork.HttpRequest;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -23,7 +29,6 @@ public class ImageLoader {
 
     //使用单例，防止ImageLoader的频繁创建，减少性能消耗
     private volatile static ImageLoader instance;
-    private final Context context;
     private static final String TAG = "ImageLoader";
     protected MemoryCache memoryCache;
     protected FileCache fileCache;
@@ -41,39 +46,32 @@ public class ImageLoader {
 
     /**
      *
-     * @param context
      * @param memoryCache
      * @param fileCache
      * @param maxThreads 用于异步加载图片线程池的最大线程数
      */
-    private ImageLoader(Context context, MemoryCache memoryCache, FileCache fileCache, int maxThreads) {
+    private ImageLoader(MemoryCache memoryCache, FileCache fileCache, int maxThreads) {
         //防止持有Activity的Context而导致内存泄露
-        this.context = context.getApplicationContext();
         this.fileCache = fileCache;
         this.memoryCache = memoryCache;
         mExecutorService = PhotoLoadThreadPoolExecutor.newFixedPhotoLoadPool(maxThreads);
-    }
-
-    public Context getContext() {
-        return context;
     }
 
     /**
      * 使用双重加锁机制实现单例，保证多线程安全，同时支持懒加载
      * 该方法应该在第一次创建ImageLoader实例时调用，在这之后若需要获取实例应当调用{@link #getInstance()}
      *
-     * @param context
      * @param memoryCache
      * @param fileCache
      * @param maxThreads 用于异步加载图片线程池的最大线程数
      *
      * @return com.wisstudio.devilwizard.photobrowserapp.util.ImageLoader
      */
-    public static ImageLoader getInstance(Context context, MemoryCache memoryCache, FileCache fileCache, int maxThreads) {
+    public static ImageLoader getInstance(MemoryCache memoryCache, FileCache fileCache, int maxThreads) {
         if (instance == null) {
             synchronized (ImageLoader.class) {
                 if (instance == null) {
-                    instance = new ImageLoader(context, memoryCache, fileCache, maxThreads);
+                    instance = new ImageLoader(memoryCache, fileCache, maxThreads);
                 }
             }
         }
@@ -82,8 +80,6 @@ public class ImageLoader {
 
     /**
      * 返回ImageLoader的单例
-     *
-     * @param
      *
      * @return com.wisstudio.devilwizard.photobrowserapp.util.ImageLoader
      *
@@ -125,19 +121,19 @@ public class ImageLoader {
      *
      * @param imageView 要加载图片的ImageView对象
      *
-     * @param url 图片的url地址
+     * @param image 描述图片信息的MyImage对象
      *
      * @return 先从一级内存缓存中取图片，若有则直接返回，如果没有则异步从文件（二级缓存）中取，如果没有再从网络端获取，最终返回Bitmap对象
      *
      */
-    public Bitmap loadBitmap(ImageView imageView, String url) {
-        mImageViews.put(imageView, url);//先将ImageView记录到Map中,表示该ui已经执行过图片加载了
-        Bitmap bitmap = memoryCache.get(url);//先从一级缓存中获取图片
+    public Bitmap loadBitmap(ImageView imageView, MyImage image) {
+        mImageViews.put(imageView, image.getUrl());//先将ImageView记录到Map中,表示该ui已经执行过图片加载了
+        Bitmap bitmap = memoryCache.get(image.getUrl());//先从一级缓存中获取图片
         if (bitmap == null) {
-            enQueueLoadPhoto(url, imageView);//再从二级缓存或网络中获取
+            enQueueLoadPhoto(imageView, image);//再从二级缓存或网络中获取
         } else {
             BitmapDisplayer displayer = new BitmapDisplayer(imageView);
-            imageView.post( () -> displayer.setImageBitmap(bitmap));
+            imageView.post(() -> displayer.setImageBitmap(bitmap));
         }
         return bitmap;//有则从一级缓存中返回
     }
@@ -145,15 +141,17 @@ public class ImageLoader {
     /**
      * 从文件缓存或网络端获取图片，若无网络则直接从本地缓存读取图片
      *
-     * @param url
+     * @param imageView 要加载图片的ImageView对象
+     *
+     * @param image 描述图片信息的MyImage对象
      */
-    public Bitmap getBitmapByUrl(String url) {
-        File f = fileCache.getFile(url);//获得缓存图片文件
-        if (f.exists()) {//如果已经加载过，才读文件，否则从网络请求
+    public Bitmap getBitmapByUrl(ImageView imageView, MyImage image) {
+        File file = fileCache.getFile(image.getUrl());//获得缓存图片文件
+        if (file.exists()) {//如果已经加载过，才读文件，否则从网络请求
             Log.d(TAG, "getBitmapByUrl: 缓存已存在");
-            Bitmap b = HttpRequest.decodeFile(f);//获得文件的Bitmap信息
-            if (b != null) {
-                return b;
+            Bitmap bitmap = BitmapFactory.decodeFile(file.getPath());//HttpRequest.decodeFile(file);//获得文件的Bitmap信息
+            if (bitmap != null) {
+                return bitmap;
             }
         }
 //        if (!isNetworkConnected(context)) {//无网络的情况
@@ -165,23 +163,24 @@ public class ImageLoader {
 //                    return b;
 //            }
 //        }
-        return HttpRequest.loadBitmapFromWeb(url, f);//从网络获得图片
+        return HttpRequest.loadBitmapFromWeb(imageView, image, file);//从网络获得图片
     }
+
 
     /**
      * 将图片加载加入队列
      *
-     * @param url 图片的url地址
-     *
      * @param imageView 要加载图片的ImageView对象
      *
+     * @param image 描述图片信息的MyImage对象
+     *
      */
-    private void enQueueLoadPhoto(String url, ImageView imageView) {
+    private void enQueueLoadPhoto(ImageView imageView, MyImage image) {
         //如果任务已经存在，则不重新添加
-        if (isTaskExisted(url)) {
+        if (isTaskExisted(image.getUrl())) {
             return;
         }
-        LoadPhotoTask task = new LoadPhotoTask(url, imageView);
+        LoadPhotoTask task = new LoadPhotoTask(imageView, image);
         synchronized (taskQueue) {//加锁，防止重复添加
             taskQueue.add(task);//将任务添加到队列中
             Log.d(TAG, "enQueueLoadPhoto: task added " + task.url + ", total task : " + taskQueue.size());
@@ -302,27 +301,29 @@ public class ImageLoader {
     class LoadPhotoTask implements Runnable{
 
         private static final String TAG = "LoadPhotoTask";
-        private String url;
         private ImageView imageView;
+        private MyImage image;
+        private String url;
 
-        LoadPhotoTask(String url, ImageView imageView) {
-            this.url = url;
+
+        LoadPhotoTask(ImageView imageView, MyImage image) {
             this.imageView = imageView;
+            this.image = image;
+            this.url = image.getUrl();
         }
 
         @Override
         public void run() {
-            Log.d(TAG, Log.getStackTraceString(new Throwable()));
             if (imageViewReused(imageView, url)) {//判断ImageView是否已经被复用
-                Log.d(TAG, " imageViewReused ! ");
+                Log.d(TAG, " imageViewReused !");
                 removeTask(this);//如果已经被复用则删除任务
                 return;
             }
-            Bitmap bmp = getBitmapByUrl(url);//从缓存文件或者网络端获取图片
+            Bitmap bmp = getBitmapByUrl(imageView, image);//从缓存文件或者网络端获取图片
             memoryCache.put(url, bmp);// 将图片放入到一级缓存中
             if (!imageViewReused(imageView, url)) {//若ImageView未加载图片则在ui线程中显示图片
                 BitmapDisplayer displayer = new BitmapDisplayer(imageView);
-                imageView.post( () -> displayer.setImageBitmap(bmp));
+                imageView.post(() -> displayer.setImageBitmap(bmp));
             }
             removeTask(this);//从队列中移除任务
         }

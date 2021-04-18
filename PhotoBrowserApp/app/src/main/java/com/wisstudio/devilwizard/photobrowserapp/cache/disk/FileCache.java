@@ -1,9 +1,11 @@
-package com.wisstudio.devilwizard.photobrowserapp.util;
+package com.wisstudio.devilwizard.photobrowserapp.cache.disk;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
+
+import com.wisstudio.devilwizard.photobrowserapp.util.ImageLoader;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -78,7 +80,7 @@ public class FileCache {
      * @return 返回图片储存的完整绝对路径
      */
     public String getFullCachePath(String url) {
-        return mCacheDir.getAbsolutePath() + "//" + ImageLoader.url2path(url);
+        return mCacheDir.getAbsolutePath() + File.separator + ImageLoader.url2path(url);
     }
 
     /**

@@ -1,4 +1,4 @@
-package com.wisstudio.devilwizard.photobrowserapp.util;
+package com.wisstudio.devilwizard.photobrowserapp.cache.memory;
 
 import android.graphics.Bitmap;
 import android.util.Log;
@@ -35,7 +35,9 @@ public class MemoryCache {
                 Log.d(TAG, "removeEldestEntry: currentSize is over the max!");
                 if (eldest != null) {
                     Bitmap bitmap = eldest.getValue();
-                    currentSize -= bitmap.getByteCount();
+                    if (bitmap != null) {
+                        currentSize -= bitmap.getByteCount();
+                    }
 //                    bitmap.recycle();//将bitmap回收掉
 //                    bitmap = null;
                 }
