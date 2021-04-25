@@ -12,6 +12,9 @@ import android.content.Context;
  */
 public class MyApplication extends Application {
     private static Context context;
+    //这里会有警告“Do not place Android context classes in static fields; this is a memory leak”
+    //Google了一下，大部分是说不要直接保存全局Context的引用，因为当Context被引用时并不会被垃圾回收器回收因此可能出现内存泄漏
+    //所以大伙给出几个解决办法：1.需要的时候在函数里传入context参数 2.用WeakReference<Context>保存 3.用的时候直接getApplicationContext()
 
     @Override
     public void onCreate() {

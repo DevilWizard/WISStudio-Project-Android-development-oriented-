@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/outline_home_black_18"
+        android:title="@string/title_home" />
+
+    <item
+        android:id="@+id/navigation_my_favorite"
+        android:icon="@drawable/outline_favorite_border_black_18"
+        android:title="@string/title_my_favorite"/>
+
+    <item
+        android:id="@+id/navigation_user"
+        android:icon="@drawable/outline_account_circle_black_18"
+        android:title="@string/title_user" />
+
+
+
+</menu>

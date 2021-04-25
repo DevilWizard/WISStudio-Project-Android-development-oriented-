@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PhotoBrowserApp">
         <activity
-            android:name="com.wisstudio.devilwizard.photobrowserapp.MainActivity"
+            android:name="com.wisstudio.devilwizard.photobrowserapp.ui.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -4,9 +4,9 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
-import com.wisstudio.devilwizard.photobrowserapp.util.MyImage;
+import com.wisstudio.devilwizard.photobrowserapp.util.image.MyImage;
+import com.wisstudio.devilwizard.photobrowserapp.util.logutil.MyLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +19,26 @@ import java.util.List;
  */
 public class PhotoDataBaseManager {
 
+    /**
+     * “已收藏”状态
+     */
+    public static final int STARRED_STATE = 1;
+    /**
+     * “未收藏”状态
+     */
+    public static final int UNSTARRED_STATE = 0;
+
     private static final String TAG = "DataBaseManager";
     private static final String AUTHOR_COLUMN = "author";
     private static final String URL_COLUMN = "url";
     private static final String WIDTH_COLUMN = "width";
     private static final String HEIGHT_COLUMN = "height";
     private static final String CACHEPATH_COLUMN = "cachePath";
-    private SQLiteDatabase db;
-    private String tableName;
+    private static final String STARED_COLUMN = "stared";
+
+
+    private final SQLiteDatabase db;
+    private final String tableName;
 
     public PhotoDataBaseManager(SQLiteOpenHelper helper) {
         db = helper.getWritableDatabase();
@@ -44,7 +56,10 @@ public class PhotoDataBaseManager {
      *
      */
     public void addOnePhoto(String author, String url, int width, int height, String cachePath) {
-
+        if (author == null || url == null || (width <= 0 || height <= 0) || cachePath == null) {
+            throw new IllegalArgumentException("illegal argument detected! The author, url, cachePath must not be null, " +
+                    "and width and height both must larger than 0");
+        }
         if (!isPhotoExists(url)) {
             ContentValues values = new ContentValues();
             values.put(AUTHOR_COLUMN, author);
@@ -55,20 +70,24 @@ public class PhotoDataBaseManager {
             db.insert(tableName, null, values);
             values.clear();
         } else {
-            Log.d(TAG, "addOnePhoto Failed: this photo is already in the database!");
+            MyLog.d(TAG, "addOnePhoto Failed: this photo is already in the database!");
         }
 
     }
 
     /**
      * 删除源网址为url的图片记录
+     *
      * @param url 待删除图片记录的url
      */
     public void deleteOnePhoto(String url) {
+        if (url == null) {
+            throw new IllegalArgumentException("the url must not be null !");
+        }
         if (isPhotoExists(url)) {
             db.delete(tableName, "url = ?", new String[]{url});
         } else {
-            Log.d(TAG, "deleteOnePhoto Failed: this photo do not exists!");
+            MyLog.d(TAG, "deleteOnePhoto Failed: this photo do not exists!");
         }
     }
 
@@ -79,6 +98,9 @@ public class PhotoDataBaseManager {
      * @return 若图片在数据库中，则返回true，否则false
      */
     public boolean isPhotoExists(String url) {
+        if (url == null) {
+            throw new IllegalArgumentException("the url must not be null !");
+        }
         String selection = URL_COLUMN + " = ?";
         Cursor cursor = db.query(tableName, null, selection, new String[] {url},
                 null, null, null);
@@ -94,8 +116,13 @@ public class PhotoDataBaseManager {
      *
      * @param url 图片的url
      * @return 返回图片的缓存路径
+     *
+     * @see com.wisstudio.devilwizard.photobrowserapp.cache.disk.FileCache#getFullCachePath(String)
      */
     public String getPhotoCachePath(String url) {
+        if (url == null) {
+            throw new IllegalArgumentException("the url must not be null !");
+        }
         String selection = URL_COLUMN + " = ?";
         String cachePath = null;
         Cursor cursor = db.query(tableName, null, selection, new String[] {url},
@@ -108,9 +135,39 @@ public class PhotoDataBaseManager {
     }
 
     /**
+     * 将网址为url的图片设置为starredState的收藏状态，starredState共有两种状态:
+     * {@link #STARRED_STATE}和{@link #UNSTARRED_STATE}
+     *
+     * @param url 待标记的图片
+     * @param starredState 要设置的收藏状态
+     */
+    public void setStarredState(String url, int starredState) {
+        if (url == null) {
+            throw new IllegalArgumentException("the url must not be null !");
+        }
+        if (starredState != STARRED_STATE && starredState != UNSTARRED_STATE) {
+            throw new IllegalArgumentException("the starredState must be 0 or 1 !");
+        }
+        String whereClause = URL_COLUMN + " = ?";
+        ContentValues values = new ContentValues();
+        switch (starredState) {
+            case UNSTARRED_STATE:
+                values.put(STARED_COLUMN, UNSTARRED_STATE);
+                break;
+            case STARRED_STATE:
+                values.put(STARED_COLUMN, STARRED_STATE);
+                break;
+            default:
+                break;
+        }
+        db.update(tableName, values, whereClause, new String[] {url});
+        values.clear();
+    }
+
+    /**
      * 将数据库中储存的所有图片信息整合成MyImage的列表返回
      *
-     * @return java.util.List<com.wisstudio.devilwizard.photobrowserapp.util.MyImage>
+     * @return java.util.List<com.wisstudio.devilwizard.photobrowserapp.util.image.MyImage>
      *
      * @see MyImage
      */
