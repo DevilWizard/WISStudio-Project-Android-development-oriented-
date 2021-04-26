@@ -23,14 +23,11 @@ public class MemoryCache {
 
 
     private static final String TAG = "MemoryCache";
+
     /**
      * 最大的缓存字节数（KB为单位）
      */
     private final int maxMemorySize;
-    /**
-     * MemoryCache当前的缓存大小（KB为单位）
-     */
-    private int currentSize;
 
     /**
      * 用LruCache作内存缓存
@@ -41,28 +38,6 @@ public class MemoryCache {
      * 用于保存那些被移出内存缓存{@link #mCacheMap}的Bitmap引用，方便后续在这寻找合适的{@link BitmapFactory.Options#inBitmap}进行复用
      */
     private final Set<SoftReference<Bitmap>> reusableBitmaps;
-
-    //这里用到了LRU思想，也就是将近期中最少使用的图片缓存清理，这里accessOrder设为true能保证最先移除访问次数最少的图片缓存
-    /**
-     * 内存缓存用LinkedHashMap<String, Bitmap>具体实现
-     */
-//    private final HashMap<String, Bitmap> mCacheMap = new LinkedHashMap<String, Bitmap>(0, 0.75f, true) {
-//        //超过缓存最大值maxMemorySize时将最早且最少使用的缓存数据清出
-//        @Override
-//        protected boolean removeEldestEntry(Entry<String, Bitmap> eldest) {
-//            if (currentSize > maxMemorySize) {
-//                Log.d(TAG, "removeEldestEntry: currentSize is over the max!");
-//                if (eldest != null) {
-//                    Bitmap bitmap = eldest.getValue();
-//                    if (bitmap != null) {
-//                        currentSize -= bitmap.getByteCount() / 1024;
-//                    }
-//                }
-//                return true;
-//            }
-//            return false;
-//        }
-//    };
 
     /**
      * 初始化内存缓存，并设置缓存大小{@link #maxMemorySize}(以KB为单位)
@@ -114,7 +89,6 @@ public class MemoryCache {
         MyLog.d(TAG, "currentSize of MemoryCache in MB: "+ mCacheMap.size() / 1024);
     }
 
-
     /**
      * 通过遍历{@link #reusableBitmaps}来寻找是否有能够被复用的bitmap引用
      *
@@ -152,6 +126,15 @@ public class MemoryCache {
     }
 
     /**
+     * 清除所有缓存
+     *
+     * @exception
+     */
+    public void clearCache() {
+        mCacheMap.evictAll();//调用LruCache自带方法释放内存缓存
+    }
+
+    /**
      * 判断candidate是否符合被复用的条件
      *
      * @param candidate {@link #reusableBitmaps}中待判断是否符合复用资格的bitmap
@@ -186,14 +169,4 @@ public class MemoryCache {
 
         return 1;
     }
-
-    /**
-     * 清除所有缓存
-     *
-     * @exception
-     */
-    public void clearCache() {
-        mCacheMap.evictAll();//调用LruCache自带方法释放内存缓存
-    }
-
 }

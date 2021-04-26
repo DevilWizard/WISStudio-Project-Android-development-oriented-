@@ -1,13 +1,14 @@
 package com.wisstudio.devilwizard.photobrowserapp.ui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Vibrator;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,9 +22,10 @@ import com.wisstudio.devilwizard.photobrowserapp.util.MyApplication;
 import com.wisstudio.devilwizard.photobrowserapp.util.image.MyImage;
 import com.wisstudio.devilwizard.photobrowserapp.util.image.load.ImageLoader;
 import com.wisstudio.devilwizard.photobrowserapp.util.logutil.MyLog;
+import com.wisstudio.devilwizard.photobrowserapp.util.network.HttpCallBackListener;
+import com.wisstudio.devilwizard.photobrowserapp.util.network.HttpRequest;
 import com.wisstudio.devilwizard.photobrowserapp.util.network.NetWorkState;
 
-import java.io.FileNotFoundException;
 import java.util.List;
 
 /**
@@ -35,39 +37,37 @@ import java.util.List;
  */
 public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
+    private static final String TAG = "MyAdapter";
+
     /**
      * 表示该View是图片类型
      */
     public static final int TYPE_IMAGE = 0;
+
     /**
      * 表示该View是加载更多的视图类型
      */
     public static final int TYPE_FOOTER = 1;
+
     /**
      * 表示下一页图片正在加载中
      */
-    public static final int LOADING = 1;//加载的状态
+    public static final int LOADING = 1;
+
     /**
      * 表示图片已经加载完毕
      */
     public static final int LOAD_FINISHED = 2;
-    private static final String TAG = "MyAdapter";
+
     /**
      * 默认的加载状态
      */
     private final int defaultLoadState = 2;//默认已加载完毕
+
     private int loadState;
     private final List<MyImage> imageList;
     private final ImageLoader imageLoader;
     private final PhotoDataBaseManager photoDataBaseManager;
-    /**
-     * 用户点击时在屏幕上的横坐标
-     */
-    private int downX;
-    /**
-     * 用户点击时在屏幕上的纵坐标
-     */
-    private int downY;
 
     /**
      * 初始化{@link #imageList}, {@link #loadState}, {@link #imageLoader}, {@link #photoDataBaseManager}
@@ -79,7 +79,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         imageLoader = ImageLoader.getInstance();
         photoDataBaseManager = MainActivity.photoDBManager;
     }
-
 
     /**
      * 显示图片的{@link RecyclerView.ViewHolder}类
@@ -143,8 +142,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return null;
     }
 
-
-
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof FooterViewHolder) {
@@ -152,6 +149,7 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 case LOADING:
                     ((FooterViewHolder) holder).loadingText.setVisibility(View.VISIBLE);
                     break;
+
                 case LOAD_FINISHED:
                     ((FooterViewHolder) holder).loadingText.setVisibility(View.GONE);
                     break;
@@ -160,42 +158,58 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             MyImage image = imageList.get(position);
             MyLog.d(TAG, "onBindViewHolder: " + "position: " + position + "url: " + image.getUrl());
             ImageView imageView = ((ImageViewHolder)holder).imageView;
-            //未加载的图片默认用纯灰图片填充
-            imageView.setImageResource(R.drawable.default_loading_picture);
+            imageView.setImageResource(R.drawable.default_loading_picture);//未加载的图片默认用纯灰图片填充
             //有时候会出现白图或黑图的情况，未知bug
             String imageUrl = image.getUrl();
             imageView.setTag(imageUrl);
-            imageView.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            downX = (int)event.getX();
-                            downY = (int)event.getY();
-                            break;
-                    }
-                    return false;
-                }
 
+            //点击图片查看原图的监听事件
+            imageView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    final Dialog dialog = new Dialog(MainActivity.getMainActivity(), R.style.fullScreenImageStyle);
+                    View dialogView = LayoutInflater.from(MainActivity.getMainActivity()).inflate(R.layout.enlarged_imageview_dialog, null);
+                    ProgressBar dialogProgressBar = dialogView.findViewById(R.id.loadingIndicateBar);
+                    ImageView enlargedImageView = dialogView.findViewById(R.id.enlargedImage);
+                    dialog.setContentView(dialogView);
+                    dialog.show();
+                    HttpRequest.loadBitmapFromWeb(imageUrl, new HttpCallBackListener<Bitmap>() {
+                        @Override
+                        public void onFinish(Bitmap response) {
+                            MainActivity.getMainActivity().runOnUiThread(() -> {
+                                dialogProgressBar.setVisibility(View.GONE);
+                                enlargedImageView.setImageBitmap(response);
+                            });
+
+                        }
+                        @Override
+                        public void onError(Exception e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    dialogView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            dialog.dismiss();
+                        }
+                    });
+
+                }
             });
+
+            //长按弹出下载和收藏菜单
             imageView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    MyLog.d(TAG, "onLongClick: " + "downX: " + downX + "downY: " + downY);
                     Vibrator vibrator = (Vibrator)(MyApplication.getContext().getSystemService(Context.VIBRATOR_SERVICE));
                     vibrator.vibrate(Vibrator.VIBRATION_EFFECT_SUPPORT_YES);//调用系统硬件级别的震动
                     LongPressPopUpWindow popUpWindow = new LongPressPopUpWindow(MainActivity.getMainActivity(), LongPressPopUpWindow.IMAGEVIEW_POPUP_WINDOW);
-                    //popUpWindow.showAtLocation();
                     popUpWindow.showAsDropDown(v, 0, 0);
                     (popUpWindow.getPopUpView()).findViewById(R.id.click_to_download).setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            try {
-                                MainActivity.getMainActivity().getImageDownLoader().saveImageToGallery(imageUrl);
-                                popUpWindow.dismiss();
-                            } catch (FileNotFoundException e) {
-                                e.printStackTrace();
-                            }
+                            MainActivity.getMainActivity().getImageDownLoader().saveImageToGallery(imageUrl);
+                            popUpWindow.dismiss();
                         }
                     });
                     (popUpWindow.getPopUpView()).findViewById(R.id.click_to_star).setOnClickListener(new View.OnClickListener() {
@@ -207,17 +221,13 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             popUpWindow.dismiss();
                         }
                     });
-                    return false;
+                    return true;//返回true可以将长按事件消耗，这样长按后就不会再触发单击事件
                 }
-
             });
+
             //加载图片的流程
-            if (NetWorkState.isNetworkConnected(MyApplication.getContext()) && imageView != null && image != null) {//区分有网和无网的情况
-                Bitmap bitmap = imageLoader.loadBitmap(imageView, image);
-                if (bitmap != null) {
-                    photoDataBaseManager.addOnePhoto(image.getAuthor(), imageUrl, image.getWidth(), image.getHeight(),
-                            imageLoader.getFileCache().getFullCachePath(imageUrl));
-                }
+            if (NetWorkState.isNetworkConnected(MyApplication.getContext()) && image != null) {//区分有网和无网的情况
+                imageLoader.loadBitmap(imageView, image);
             } else {
                 imageLoader.loadPhotoFromFileCache(imageUrl, imageView, photoDataBaseManager);
             }
@@ -229,7 +239,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         //多了一个footer，需要额外加1
         return imageList.size() + 1;
     }
-
 
     @Override
     public void onViewAttachedToWindow(@NonNull RecyclerView.ViewHolder holder) {

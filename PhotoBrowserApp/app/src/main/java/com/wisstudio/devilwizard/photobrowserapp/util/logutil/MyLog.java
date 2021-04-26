@@ -11,7 +11,7 @@ import android.util.Log;
 public class MyLog {
 
     /**
-     * @see android.util.Log#VERBOSE
+     * @Hide @see android.util.Log#VERBOSE
      */
     public static final int VERBOSE = 1;
 
@@ -90,5 +90,4 @@ public class MyLog {
             Log.e(tag, msg);
         }
     }
-
 }

@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="fullScreenImageStyle">
+        <item name="android:windowAnimationStyle">@style/Animation.Design.BottomSheetDialog</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowNoTitle">true</item>
+        <item name="android:background">@color/black</item>
     </style>
+
 </resources>

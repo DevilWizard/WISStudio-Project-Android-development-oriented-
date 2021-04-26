@@ -2,7 +2,6 @@ package com.wisstudio.devilwizard.photobrowserapp.util.image;
 
 import androidx.annotation.NonNull;
 
-
 /**
  * MyImage是描述每张图片对象的类，包含了图片的宽高、来源网址等属性
  *
@@ -16,14 +15,17 @@ public class MyImage {
      * 图片的作者
      */
     private final String author;
+
     /**
      * 图片的宽(以pixel为单位)
      */
     private final int width;
+
     /**
      * 图片的高(以pixel为单位)
      */
     private final int height;
+
     /**
      * 图片的源网址
      */

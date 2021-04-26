@@ -11,6 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * 自定义的图片加载线程池，添加了暂停和恢复当前执行任务的功能
+ *
  * @author WizardK
  * @date 2021-04-12
  */
@@ -44,24 +45,6 @@ public class PhotoLoadThreadPoolExecutor extends ThreadPoolExecutor {
                 new LinkedBlockingQueue<Runnable>());
     }
 
-    @Override
-    protected void beforeExecute(Thread t, Runnable r) {
-        super.beforeExecute(t, r);
-        lock.lock();
-        try {
-            while (isPause){
-                long ms = 10L;
-                MyLog.d(TAG, "beforeExecute: " + "pausing, " + t.getName());
-                Thread.sleep(ms);
-                condition.await();
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     /**
      * 暂停线程池中的任务
      */
@@ -83,4 +66,21 @@ public class PhotoLoadThreadPoolExecutor extends ThreadPoolExecutor {
         lock.unlock();
     }
 
+    @Override
+    protected void beforeExecute(Thread t, Runnable r) {
+        super.beforeExecute(t, r);
+        lock.lock();
+        try {
+            while (isPause){
+                long ms = 10L;
+                MyLog.d(TAG, "beforeExecute: " + "pausing, " + t.getName());
+                Thread.sleep(ms);
+                condition.await();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
 }

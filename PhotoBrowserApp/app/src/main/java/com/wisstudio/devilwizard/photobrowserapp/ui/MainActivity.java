@@ -19,15 +19,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.wisstudio.devilwizard.photobrowserapp.R;
 import com.wisstudio.devilwizard.photobrowserapp.cache.disk.FileCache;
 import com.wisstudio.devilwizard.photobrowserapp.cache.memory.MemoryCache;
@@ -46,28 +41,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 浏览页面的{@link android.app.Activity}类
+ * 浏览页面的主活动
  */
 public class MainActivity extends AppCompatActivity implements HttpCallBackListener<List<MyImage>> {
 
-    public int page = 1;//图片url的页数，page不同请求回的图片也不同
+
     public static PhotoDataBaseManager photoDBManager;
-    private static final int PHOTO_DB_VERSION = 1;
-    private static final int STORAGE_REQUEST_CODE = 1;//权限请求码
-    /**
-     * 一次请求的默认图片张数
-     */
-    private static final int PAGE_PER_PHOTOS = 8;
+    private static MainActivity mainActivity;
+
     private static final String TAG = "MainActivity";
     private static final String PHOTO_JSON_HEAD = "https://picsum.photos/v2/list?page=";
     private static final String PHOTO_JSON_REAR = "&limit=8";//默认一次initImageList请求加载8张图片
     private static final String PHOTO_DB_NAME = "PhotoDataBase.db";
-    private static MainActivity mainActivity;
 
+    /**
+     * 储存图片信息的数据库版本
+     */
+    private static final int PHOTO_DB_VERSION = 1;
 
-    private final Object loadLock = new Object();//使page自增操作同步
+    /**
+     * 储存权限请求码
+     */
+    private static final int STORAGE_REQUEST_CODE = 1;
 
-    private List<MyImage> myImageList = new ArrayList<>();
+    /**
+     * 一次请求的默认图片张数
+     */
+    private static final int PAGE_PER_PHOTOS = 8;
+
     private ActionBar actionBar;
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
@@ -83,12 +84,17 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     private int maxMemory;//应用占用的最大内存，以字节B为单位
     private int maxThread;//应用分配到的线程数
 
+    private int page = 1;//图片url的页数，page不同请求回的图片也不同
+    private final Object loadLock = new Object();//使page自增操作同步
+    private final List<MyImage> myImageList = new ArrayList<>();
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mainActivity = this;
-        showPermissionDialog();
+        showPermissionDialog();//第一次启动应用时进行弹窗请求相应权限
         maxMemory = (int) Runtime.getRuntime().maxMemory();
         maxThread = Runtime.getRuntime().availableProcessors();
 
@@ -109,7 +115,6 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         initSwipeRefreshLayout(swipeRefreshLayout);
         initRecyclerView(recyclerView);//初始化recyclerview
         initImageList(getDifferentJson());//异步请求图片
-
     }
 
     /**
@@ -123,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         View myActionBarView = LayoutInflater.from(this).inflate(R.layout.my_actionbar_contentview, actionBarRootView, true);
         actionBar.setCustomView(myActionBarView);
         TextView actionBarTextView = myActionBarView.findViewById(R.id.actionBar_title);
+        //添加双击回到顶部的事件
         actionBarTextView.setOnTouchListener(new View.OnTouchListener() {
             int count = 0;
             long firstClick = 0;
@@ -137,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                     } else if (count == 2){
                         secondClick = System.currentTimeMillis();
                         if(secondClick - firstClick < 1000){
-                            recyclerView.smoothScrollToPosition(0);
+                            recyclerView.scrollToPosition(0);
                         }
                         count = 0;
                         firstClick = 0;
@@ -147,9 +153,9 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                 return true;
 
             }
+
         });
     }
-
 
     /**
      * 初始化下拉刷新的视图同时为其设置监听器
@@ -158,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
      */
     private void initSwipeRefreshLayout(SwipeRefreshLayout swipeRefreshLayout) {
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.design_default_color_primary));
+        //设置下拉刷新事件
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -166,21 +173,18 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         });
     }
 
-
     /**
      * 初始化主页面的recyclerView，并完成相关操作
      *
      * @param recyclerView
-     *
      */
     private void initRecyclerView(RecyclerView recyclerView) {
-
         recyclerView = findViewById(R.id.image_recyclerview);
         StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2,
                 StaggeredGridLayoutManager.VERTICAL);
         recyclerView.setLayoutManager(staggeredGridLayoutManager);
         myAdapter = new MyAdapter(myImageList);
-        recyclerView.setAdapter(myAdapter);
+        recyclerView.setAdapter(myAdapter);//初始化数组适配器
         addListenerForRecyclerView(recyclerView);//初始化滑动监听器
     }
 
@@ -199,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     }
 
     /**
-     * 下拉刷新的事件
+     * 下拉刷新的加载事件
      */
     private void refreshPage() {
         if (NetWorkState.isNetworkConnected(this)) {
@@ -223,12 +227,10 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                     e.printStackTrace();
                 }
             });
-
         } else {
             Toast.makeText(this, "刷新失败，请检查网络是否连接", Toast.LENGTH_LONG).show();
             swipeRefreshLayout.setRefreshing(false);
         }
-
     }
 
     /**
@@ -240,16 +242,14 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         if (!NetWorkState.isNetworkConnected(this)) {    //无网络时直接读取缓存
             List<MyImage> cachedImages = photoDBManager.selectAllPhoto();
             for (MyImage myImage : cachedImages) {
-                myImageList.add(myImage);
+                myImageList.add(myImage);//读取本地缓存后add进适配器
                 myAdapter.notifyItemInserted(myImageList.size() - 1);
             }
             loadingBar.setVisibility(View.GONE);
             firstTimeLoadingTips.setVisibility(View.GONE);
-            //读取本地缓存后add进适配器
         } else {
             HttpRequest.getJson(imgJsonUrl, this);
         }
-
     }
 
     /**
@@ -258,19 +258,17 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
      * @param recyclerView 要设置滑动监听的RecyclerView
      */
     private void addListenerForRecyclerView(RecyclerView recyclerView) {
-
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             private boolean isSlidingUpward = false;
             private int[] lastPositions = null;
             private int lastCompletelyVisibleItemPosition = 0;
-            private StaggeredGridLayoutManager manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
-            private ImageLoader imageLoader = ImageLoader.getInstance();
+            private final StaggeredGridLayoutManager manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
+            private final ImageLoader imageLoader = ImageLoader.getInstance();
 
             //当滑到底部时，开始加载下一页图片
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
-                //manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
                 switch (newState) {
                     case RecyclerView.SCROLL_STATE_IDLE:
                         imageLoader.resume();
@@ -288,6 +286,7 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                             }
                         }
                         break;
+
                     case RecyclerView.SCROLL_STATE_DRAGGING:
                     case RecyclerView.SCROLL_STATE_SETTLING:
                         imageLoader.pause();
@@ -303,16 +302,11 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
                 //判断recyclerView是否在向上滑动，若只是手指向上滑动而整个视图没动，isSlidingUpward仍为false
-                if (dy > 0) {
-                    isSlidingUpward = true;
-                } else {
-                    isSlidingUpward = false;
-                }
-                //manager = (StaggeredGridLayoutManager) recyclerView.getLayoutManager();
+                isSlidingUpward = dy > 0;
+
                 if (lastPositions == null) {
                     lastPositions = new int[manager.getSpanCount()];
                 }
-
             }
 
             //找到屏幕最底最右的视图位置
@@ -338,37 +332,30 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
      * 弹出提示用户授权权限的对话框
      */
     private void showPermissionDialog() {//只应当在用户未授权相应权限时显示
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
             AlertDialog.Builder dialog = new AlertDialog.Builder(this);
             dialog.setTitle("储存权限访问申请")
-                  .setMessage("为了顺利保存图片，请您在接下来的对话框中选择“允许储存访问”");
-            dialog.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                            STORAGE_REQUEST_CODE);
-                }
-            });
-            dialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    forceKillApp();
-                }
-            });
+                  .setMessage("为了顺利保存图片，请您在接下来的对话框中选择“允许储存访问”")
+                  .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                      @Override
+                      public void onClick(DialogInterface dialog, int which) {
+                          ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                                  STORAGE_REQUEST_CODE);
+                      }})
+                  .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                      @Override
+                      public void onClick(DialogInterface dialog, int which) {
+                          forceKillApp();
+                      }});
+
             dialog.create().show();
         }
     }
 
     /**
-     * 强制退出app
-     */
-    private void forceKillApp() {
-        android.os.Process.killProcess(android.os.Process.myPid());
-    }
-
-    /**
-     * 请求完图片的json后回调的onFinish函数
+     * 请求完图片的json后回调的onFinish函数（请求成功的情况）
      *
      * @param response 响应回来的MyImage列表对象
      *
@@ -388,7 +375,25 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         MyLog.d(TAG, "onFinish: myImageList size" + myImageList.size());
    }
 
+    /**
+     * 请求图片的json后回调的onError函数（请求失败的情况）
+     *
+     * @param e 请求失败捕获的异常
+     *
+     */
+    @Override
+    public void onError(Exception e) {
+        e.printStackTrace();
+    }
 
+    /**
+     * 通过杀死进程强制退出app，此函数应慎用
+     */
+    private void forceKillApp() {
+        android.os.Process.killProcess(android.os.Process.myPid());
+    }
+
+   //第一次安装应用时请求储存权限使用授权
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -417,12 +422,6 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         return imageDownLoader;
     }
 
-    @Override
-    public void onError(Exception e) {
-        e.printStackTrace();
-    }
-
-
     //当按返回键退出应用时不会将其销毁
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -437,7 +436,5 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         super.onDestroy();
         imageLoader.release();
         photoDBManager.closeDataBase();
-        //forceKillApp();//手动强制杀死进程
     }
-
 }

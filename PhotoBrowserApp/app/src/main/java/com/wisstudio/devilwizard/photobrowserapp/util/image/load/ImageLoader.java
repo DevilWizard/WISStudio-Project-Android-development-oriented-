@@ -1,16 +1,12 @@
 package com.wisstudio.devilwizard.photobrowserapp.util.image.load;
 
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.widget.ImageView;
 
 import com.wisstudio.devilwizard.photobrowserapp.cache.disk.FileCache;
 import com.wisstudio.devilwizard.photobrowserapp.cache.memory.MemoryCache;
 import com.wisstudio.devilwizard.photobrowserapp.db.PhotoDataBaseManager;
 import com.wisstudio.devilwizard.photobrowserapp.ui.MainActivity;
-import com.wisstudio.devilwizard.photobrowserapp.util.MyApplication;
 import com.wisstudio.devilwizard.photobrowserapp.util.image.MyImage;
 import com.wisstudio.devilwizard.photobrowserapp.util.image.display.BitmapDisplayer;
 import com.wisstudio.devilwizard.photobrowserapp.util.logutil.MyLog;
@@ -38,19 +34,24 @@ public class ImageLoader {
      * 本类的唯一实例
      */
     private volatile static ImageLoader instance;
+
     private static final String TAG = "ImageLoader";
+
     /**
      * 内存缓存实例
      */
     private final MemoryCache memoryCache;
+
     /**
      * 文件缓存实例
      */
     private final FileCache fileCache;
+
     /**
      * 线程池管理器
      */
     private final ExecutorService mExecutorService;
+
     /**
      * 记录已经加载图片的ImageView
      */
@@ -69,7 +70,6 @@ public class ImageLoader {
      * @param maxThreads 用于异步加载图片线程池的最大线程数
      */
     private ImageLoader(MemoryCache memoryCache, FileCache fileCache, int maxThreads) {
-        //防止持有Activity的Context而导致内存泄露
         this.fileCache = fileCache;
         this.memoryCache = memoryCache;
         this.mImageViews = new ConcurrentHashMap<>(); //Collections.synchronizedMap(new WeakHashMap<>());
@@ -111,7 +111,6 @@ public class ImageLoader {
         }
         return instance;
     }
-
 
     /**
      * 将图片的url转为储存的目录名
@@ -167,6 +166,7 @@ public class ImageLoader {
         if (imageView != null) {
             mImageViews.put(imageView, image.getUrl());//先将ImageView记录到Map中,表示该imageView已经执行过图片加载了
         }
+
         Bitmap bitmap = memoryCache.get(image.getUrl());//先从一级缓存中获取图片
         if (bitmap == null) {
             enQueueLoadPhoto(imageView, image);//再从二级缓存或网络中获取
@@ -196,73 +196,6 @@ public class ImageLoader {
         }
         return HttpRequest.loadBitmapFromWeb(imageView, image, file);//从网络获得图片
     }
-
-
-    /**
-     * 将图片加入加载队列{@link #taskQueue}，然后通过线程池{@link #mExecutorService}执行加载
-     *
-     * @param imageView 要加载图片的ImageView对象
-     *
-     * @param image 描述图片信息的MyImage对象
-     *
-     */
-    private void enQueueLoadPhoto(ImageView imageView, MyImage image) {
-        //如果任务已经存在，则不重新添加
-        if (isTaskExisted(image.getUrl())) {
-            return;
-        }
-        LoadPhotoTask task = new LoadPhotoTask(imageView, image);
-        synchronized (taskQueue) {//加锁，防止重复添加
-            taskQueue.add(task);//将任务添加到队列中
-            MyLog.d(TAG, "enQueueLoadPhoto: task added " + task.url + ", total task : " + taskQueue.size());
-        }
-
-        mExecutorService.execute(task);//向线程池中提交任务
-    }
-
-    /**
-     * 判断任务队列{@link #taskQueue}中是否已经存在网址为url的{@link LoadPhotoTask}任务
-     *
-     * @param url 要判断的任务的{@link LoadPhotoTask#url}
-     *
-     * @return 若任务已存在则返回true，否则返回false
-     */
-    private boolean isTaskExisted(String url) {
-        if(url == null) {
-            return false;
-        }
-        synchronized (taskQueue) {
-            int size = taskQueue.size();
-            for(int i=0; i<size; i++) {
-                LoadPhotoTask task = taskQueue.get(i);
-                if(task != null && task.getUrl().equals(url)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 判断设备是否联网
-     *
-     * @param context 全局的{@link Context}对象，可通过{@link MyApplication#getApplicationContext()}获取
-     *
-     * @return 若设备已联网则返回true，否则返回false
-     *
-     */
-    public static boolean isNetworkConnected(Context context) {
-        if (context !=null) {
-            ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = manager.getActiveNetworkInfo();
-            if (networkInfo != null) {
-                return networkInfo.isAvailable();
-            }
-        }
-        return false;
-    }
-
-
 
     /**
      * 在加载图片前判断传入的ImageView是否已经加载过其他图片了（可用于判断是否需要加载图片）
@@ -323,6 +256,51 @@ public class ImageLoader {
     }
 
     /**
+     * 将图片加入加载队列{@link #taskQueue}，然后通过线程池{@link #mExecutorService}执行加载
+     *
+     * @param imageView 要加载图片的ImageView对象
+     *
+     * @param image 描述图片信息的MyImage对象
+     *
+     */
+    private void enQueueLoadPhoto(ImageView imageView, MyImage image) {
+        //如果任务已经存在，则不重新添加
+        if (isTaskExisted(image.getUrl())) {
+            return;
+        }
+        LoadPhotoTask task = new LoadPhotoTask(imageView, image);
+        synchronized (taskQueue) {//加锁，防止重复添加
+            taskQueue.add(task);//将任务添加到队列中
+            MyLog.d(TAG, "enQueueLoadPhoto: task added " + task.url + ", total task : " + taskQueue.size());
+        }
+
+        mExecutorService.execute(task);//向线程池中提交任务
+    }
+
+    /**
+     * 判断任务队列{@link #taskQueue}中是否已经存在网址为url的{@link LoadPhotoTask}任务
+     *
+     * @param url 要判断的任务的{@link LoadPhotoTask#url}
+     *
+     * @return 若任务已存在则返回true，否则返回false
+     */
+    private boolean isTaskExisted(String url) {
+        if(url == null) {
+            return false;
+        }
+        synchronized (taskQueue) {
+            int size = taskQueue.size();
+            for(int i=0; i<size; i++) {
+                LoadPhotoTask task = taskQueue.get(i);
+                if(task != null && task.getUrl().equals(url)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * 加载图片的任务类
      */
     class LoadPhotoTask implements Runnable{
@@ -360,8 +338,4 @@ public class ImageLoader {
             return url;
         }
     }
-
 }
-
-
-

@@ -21,7 +21,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 /**
- * 将图片保存至本地相册的专用类
+ * 将图片下载至本地相册的专用类
  *
  * @author WizardK
  * @date 2021-04-17
@@ -33,6 +33,7 @@ public class ImageDownLoader {
      */
     public static final String SAVE_DIRECTORY_NAME = "photo_save";
     private static final String TAG = "ImageDownLoader";
+
     private final String savePath;
 
     /**
@@ -54,13 +55,7 @@ public class ImageDownLoader {
      *
      * @exception
      */
-    public void saveImageToGallery(String url) throws FileNotFoundException {
-
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//            ContentValues values = new ContentValues();
-//            values.put(MediaStore.MediaColumns.DISPLAY_NAME, );
-//        }
-
+    public void saveImageToGallery(String url) {
         if (NetWorkState.isNetworkConnected(MyApplication.getContext())) {
             MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(),
                     "图片已保存", Toast.LENGTH_SHORT).show());
@@ -87,8 +82,8 @@ public class ImageDownLoader {
                         }
                     }
                     Uri uri = Uri.fromFile(file);
+                    //发送广播通知相册更新
                     MyApplication.getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
-                    //不能在ui线程外toast
                 }
 
                 @Override
@@ -99,7 +94,5 @@ public class ImageDownLoader {
         } else {
             MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(), "保存失败，当前无网络", Toast.LENGTH_LONG).show());
         }
-
-
     }
 }

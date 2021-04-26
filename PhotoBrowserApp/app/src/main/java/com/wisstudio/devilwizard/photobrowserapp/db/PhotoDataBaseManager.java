@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import com.wisstudio.devilwizard.photobrowserapp.util.image.MyImage;
 import com.wisstudio.devilwizard.photobrowserapp.util.logutil.MyLog;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,7 @@ public class PhotoDataBaseManager {
      * “已收藏”状态
      */
     public static final int STARRED_STATE = 1;
+
     /**
      * “未收藏”状态
      */
@@ -34,7 +36,7 @@ public class PhotoDataBaseManager {
     private static final String WIDTH_COLUMN = "width";
     private static final String HEIGHT_COLUMN = "height";
     private static final String CACHEPATH_COLUMN = "cachePath";
-    private static final String STARED_COLUMN = "stared";
+    private static final String STARRED_COLUMN = "starred";
 
 
     private final SQLiteDatabase db;
@@ -46,7 +48,7 @@ public class PhotoDataBaseManager {
     }
 
     /**
-     * 往数据库中插入图片相关信息
+     * 往数据库中插入<strong>单张</strong>图片的相关信息
      *
      * @param author 图片的创作者
      * @param url 图片下载的源网址
@@ -60,6 +62,7 @@ public class PhotoDataBaseManager {
             throw new IllegalArgumentException("illegal argument detected! The author, url, cachePath must not be null, " +
                     "and width and height both must larger than 0");
         }
+
         if (!isPhotoExists(url)) {
             ContentValues values = new ContentValues();
             values.put(AUTHOR_COLUMN, author);
@@ -148,14 +151,18 @@ public class PhotoDataBaseManager {
         if (starredState != STARRED_STATE && starredState != UNSTARRED_STATE) {
             throw new IllegalArgumentException("the starredState must be 0 or 1 !");
         }
+        if (!isPhotoExists(url)) {
+            throw new InvalidParameterException("this photo is not yet stored in database!");
+        }
+
         String whereClause = URL_COLUMN + " = ?";
         ContentValues values = new ContentValues();
         switch (starredState) {
             case UNSTARRED_STATE:
-                values.put(STARED_COLUMN, UNSTARRED_STATE);
+                values.put(STARRED_COLUMN, UNSTARRED_STATE);
                 break;
             case STARRED_STATE:
-                values.put(STARED_COLUMN, STARRED_STATE);
+                values.put(STARRED_COLUMN, STARRED_STATE);
                 break;
             default:
                 break;

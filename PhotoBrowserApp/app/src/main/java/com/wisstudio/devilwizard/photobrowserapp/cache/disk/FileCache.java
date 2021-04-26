@@ -25,6 +25,7 @@ public class FileCache {
      */
     public static final String DEFAULT_CACHE_DIR = "imgCache";
     private static final String TAG = "FileCache";
+
     /**
      * 图片缓存目录
      */
@@ -70,7 +71,6 @@ public class FileCache {
         return f;
     }
 
-    
     /**
      * 先从mMemoryCache中寻找那些被清出放在reusableBitmaps里的bitmap，若有则直接读取，
      * 否则通过缓存路径读取缓存图片并返回其{@link Bitmap}，此方法得到的缓存与{@link #getFile(String)}一致
@@ -94,27 +94,6 @@ public class FileCache {
     }
 
     /**
-     * 寻找合适的{@link BitmapFactory.Options#inBitmap}并使用
-     *
-     * @param options 目标图片的相关{@link BitmapFactory.Options}参数
-     *
-     * @param mMemoryCache 内存缓存实例，在这里面寻找是否有合适的inBitmap
-     */
-    private void addInBitmapOptions(BitmapFactory.Options options, MemoryCache mMemoryCache) {
-
-        options.inMutable = true;
-
-        if (mMemoryCache != null) {
-            //寻找是否有符合资格的bitmap
-            Bitmap inBitmap = mMemoryCache.getBitmapFromReusableSet(options);
-
-            if (inBitmap != null) {
-                options.inBitmap = inBitmap;//若符合复用资格则将其赋给options的inBitmap属性，这样以后调用decodeFile就能直接复用inBitmap而不用再次分配内存了
-            }
-        }
-    }
-
-    /**
      * 返回图片储存的完整绝对路径
      *
      * @param url 图片的url
@@ -135,5 +114,28 @@ public class FileCache {
             f.delete();
         }
 
+    }
+
+    /**
+     * 寻找合适的{@link BitmapFactory.Options#inBitmap}并使用
+     *
+     * @param options 目标图片的相关{@link BitmapFactory.Options}参数
+     *
+     * @param mMemoryCache 内存缓存实例，在这里面寻找是否有合适的inBitmap
+     */
+    private void addInBitmapOptions(BitmapFactory.Options options, MemoryCache mMemoryCache) {
+
+        options.inMutable = true;
+
+        if (mMemoryCache != null) {
+            //寻找是否有符合资格的bitmap
+            Bitmap inBitmap = mMemoryCache.getBitmapFromReusableSet(options);
+
+            if (inBitmap != null) {
+                //若符合复用资格则将其赋给options的inBitmap属性，
+                // 这样以后调用decodeFile就能直接复用inBitmap而不用再次分配内存了
+                options.inBitmap = inBitmap;
+            }
+        }
     }
 }
