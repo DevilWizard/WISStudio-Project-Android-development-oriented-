@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">PhotoBrowserApp</string>
+    <string name="emptyText"></string>
+    <string name="requestButton">请求图片</string>
+    <string name="loadingText">加载更多内容中...</string>
+    <string name="downloadText">下载原图</string>
+    <string name="actionbar_text">PhotoBrowser</string>
+    <string name="title_user">我的</string>
+    <string name="title_home">主页</string>
+    <string name="title_my_favorite">我的最爱</string>
+    <string name="star_text">收藏</string>
+    <string name="my_favorite_page_title_text">我的收藏</string>
+</resources>
