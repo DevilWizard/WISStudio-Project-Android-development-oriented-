@@ -107,7 +107,7 @@ public class FileCache {
     /**
      * 清除本地文件缓存
      */
-    public void clear() {
+    public void clearCache() {
 
         File[] files = mCacheDir.listFiles();
         for (File f : files) {

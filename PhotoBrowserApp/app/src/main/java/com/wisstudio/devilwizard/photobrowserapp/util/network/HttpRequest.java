@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.List;
 
@@ -74,9 +75,13 @@ public class HttpRequest {
                 }
                 List<MyImage> imageList = parse2MyImageList(response.toString());
                 MyLog.d(TAG, "getJson: json read finished");
-                if (listener != null) {
+                if (imageList != null) {
                     listener.onFinish(imageList);
+                } else {
+                    listener.onFailed();
                 }
+            } catch (SocketTimeoutException e) {
+                listener.onFailed();
             } catch (Exception e) {
                 listener.onError(e);
             } finally {
@@ -117,14 +122,20 @@ public class HttpRequest {
                 conn = (HttpURLConnection) imageUrl.openConnection();
                 conn.setConnectTimeout(4000);
                 conn.setReadTimeout(4000);
-                is = conn.getInputStream();
+                is = conn.getInputStream();//无网络时这里会卡住
+                MyLog.d(TAG, "inputstream read out");
                 bitmap = BitmapFactory.decodeStream(is);
-                listener.onFinish(bitmap);
-            } catch (MalformedURLException e) {
+                if (bitmap == null) {
+                    listener.onFailed();
+                } else {
+                    listener.onFinish(bitmap);
+                }
+            } catch (SocketTimeoutException e) {
                 e.printStackTrace();
+                listener.onFailed();
+            } catch (MalformedURLException e) {
                 listener.onError(e);
             } catch (IOException e) {
-                e.printStackTrace();
                 listener.onError(e);
             } finally {
                 if (is != null) {
@@ -198,7 +209,6 @@ public class HttpRequest {
      * @exception  FileNotFoundException
      */
     private static Bitmap cacheToLocal(InputStream is, File file, ImageView imageView, MyImage image) {
-
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = calcuSampleSize(image, imageView.getWidth(), imageView.getHeight());
         Bitmap bitmap = BitmapFactory.decodeStream(is, null, options);//减少采样率，相当于是内存占用压缩

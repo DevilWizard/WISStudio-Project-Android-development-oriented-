@@ -81,32 +81,6 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     /**
-     * 显示图片的{@link RecyclerView.ViewHolder}类
-     */
-    public static class ImageViewHolder extends RecyclerView.ViewHolder {
-
-        private final ImageView imageView;
-
-        public ImageViewHolder(@NonNull View itemView) {
-            super(itemView);
-            imageView = itemView.findViewById(R.id.image);
-        }
-    }
-
-    /**
-     * 显示加载更多的{@link RecyclerView.ViewHolder}类
-     */
-    public static class FooterViewHolder extends RecyclerView.ViewHolder {
-
-        private final TextView loadingText;
-
-        public FooterViewHolder(@NonNull View itemView) {
-            super(itemView);
-            loadingText = itemView.findViewById(R.id.loadTips);
-        }
-    }
-
-    /**
      * 将显示“加载更多”的视图设置为{@link #loadState}的状态
      *
      * @param loadState 要设置的加载状态，共有两种状态{@link #LOADING}, {@link #LOAD_FINISHED}
@@ -173,27 +147,39 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     ImageView enlargedImageView = dialogView.findViewById(R.id.enlargedImage);
                     dialog.setContentView(dialogView);
                     dialog.show();
-                    HttpRequest.loadBitmapFromWeb(imageUrl, new HttpCallBackListener<Bitmap>() {
-                        @Override
-                        public void onFinish(Bitmap response) {
-                            MainActivity.getMainActivity().runOnUiThread(() -> {
-                                dialogProgressBar.setVisibility(View.GONE);
-                                enlargedImageView.setImageBitmap(response);
-                            });
+                    if (NetWorkState.isNetworkConnected(MyApplication.getContext())) {
+                        HttpRequest.loadBitmapFromWeb(imageUrl, new HttpCallBackListener<Bitmap>() {
+                            @Override
+                            public void onFinish(Bitmap response) {
+                                MainActivity.getMainActivity().runOnUiThread(() -> {
+                                    dialogProgressBar.setVisibility(View.GONE);
+                                    enlargedImageView.setImageBitmap(response);
+                                });
+                            }
 
-                        }
-                        @Override
-                        public void onError(Exception e) {
-                            e.printStackTrace();
-                        }
-                    });
+                            @Override
+                            public void onFailed() {
+                                TextView textView = dialogView.findViewById(R.id.photoLoadFailedWarnText);
+                                textView.setVisibility(View.VISIBLE);
+                            }
+
+                            @Override
+                            public void onError(Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    } else {
+                        dialogProgressBar.setVisibility(View.GONE);
+                        TextView textView = dialogView.findViewById(R.id.photoLoadFailedWarnText);
+                        textView.setVisibility(View.VISIBLE);
+                    }
+
                     dialogView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             dialog.dismiss();
                         }
                     });
-
                 }
             });
 
@@ -250,6 +236,32 @@ public class MyAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             if (getItemViewType(position) == TYPE_FOOTER) {
                 params.setFullSpan(true);//将“加载更多”视图的宽度设为整个屏幕的宽度
             }
+        }
+    }
+
+    /**
+     * 显示图片的{@link RecyclerView.ViewHolder}类
+     */
+    public static class ImageViewHolder extends RecyclerView.ViewHolder {
+
+        private final ImageView imageView;
+
+        public ImageViewHolder(@NonNull View itemView) {
+            super(itemView);
+            imageView = itemView.findViewById(R.id.image);
+        }
+    }
+
+    /**
+     * 显示加载更多的{@link RecyclerView.ViewHolder}类
+     */
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+
+        private final TextView loadingText;
+
+        public FooterViewHolder(@NonNull View itemView) {
+            super(itemView);
+            loadingText = itemView.findViewById(R.id.loadTips);
         }
     }
 }

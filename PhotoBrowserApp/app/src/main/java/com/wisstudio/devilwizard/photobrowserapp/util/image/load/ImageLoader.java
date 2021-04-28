@@ -249,10 +249,8 @@ public class ImageLoader {
      */
     public void release() {
         memoryCache.clearCache();
-        fileCache.clear();
         mImageViews.clear();
         taskQueue.clear();
-        mExecutorService.shutdown();
     }
 
     /**

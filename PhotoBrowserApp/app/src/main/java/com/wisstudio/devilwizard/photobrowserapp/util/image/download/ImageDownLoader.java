@@ -58,7 +58,7 @@ public class ImageDownLoader {
     public void saveImageToGallery(String url) {
         if (NetWorkState.isNetworkConnected(MyApplication.getContext())) {
             MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(),
-                    "图片已保存", Toast.LENGTH_SHORT).show());
+                    "图片保存中", Toast.LENGTH_SHORT).show());
             HttpRequest.loadBitmapFromWeb(url, new HttpCallBackListener<Bitmap>() {
                 @Override
                 public void onFinish(Bitmap response) {
@@ -72,6 +72,8 @@ public class ImageDownLoader {
                         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream);
                         MediaStore.Images.Media.insertImage(MyApplication.getContext().getContentResolver(),
                                 file.getAbsolutePath(), fileName, null);
+                        MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(),
+                                "保存成功", Toast.LENGTH_SHORT).show());
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     } finally {
@@ -86,13 +88,20 @@ public class ImageDownLoader {
                     MyApplication.getContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri));
                 }
 
-                @Override
-                public void onError(Exception e) {
+            @Override
+            public void onFailed() {
+                MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(),
+                        "保存失败，请检查网络是否连接", Toast.LENGTH_LONG).show());
+            }
+
+            @Override
+            public void onError(Exception e) {
                     e.printStackTrace();
                 }
             });
         } else {
-            MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(), "保存失败，当前无网络", Toast.LENGTH_LONG).show());
+            MainActivity.getMainActivity().runOnUiThread(() -> Toast.makeText(MyApplication.getContext(),
+                    "保存失败，当前无网络", Toast.LENGTH_LONG).show());
         }
     }
 }

@@ -223,6 +223,12 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
                 }
 
                 @Override
+                public void onFailed() {
+                    Toast.makeText(MainActivity.this, "刷新失败，请检查网络是否连接", Toast.LENGTH_LONG).show();
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+
+                @Override
                 public void onError(Exception e) {
                     e.printStackTrace();
                 }
@@ -375,6 +381,11 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
         MyLog.d(TAG, "onFinish: myImageList size" + myImageList.size());
    }
 
+    @Override
+    public void onFailed() {
+        Toast.makeText(this, "图片加载失败，请检查网络链接", Toast.LENGTH_SHORT).show();
+    }
+
     /**
      * 请求图片的json后回调的onError函数（请求失败的情况）
      *
@@ -435,6 +446,5 @@ public class MainActivity extends AppCompatActivity implements HttpCallBackListe
     protected void onDestroy() {
         super.onDestroy();
         imageLoader.release();
-        photoDBManager.closeDataBase();
     }
 }
